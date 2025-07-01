@@ -1,6 +1,7 @@
 const express = require('express');
 const fetch = require('node-fetch');
 const cors = require('cors');
+const PORT = process.env.PORT || 3000;
 
 const app = express();
 app.use(cors());
@@ -96,5 +97,4 @@ app.post('/openai', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log('Proxy server running on port', PORT));
