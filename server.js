@@ -61,8 +61,8 @@ app.all('/openai/*', async (req, res) => {
     if (response.headers.get('content-type')?.includes('text/event-stream')) {
       response.body.pipe(res);
     } else {
-      const data = await response.clone().text();
-      console.log('OpenAI response:', response.status, data);
+      const data = await response.text();
+      res.send(data); // <--- ЭТО ОБЯЗАТЕЛЬНО!
     }
   } catch (e) {
     console.error('Proxy server error:', e);
