@@ -62,7 +62,8 @@ app.all('/openai/*', async (req, res) => {
       response.body.pipe(res);
     } else {
       const data = await response.text();
-      res.send(data); // <--- ЭТО ОБЯЗАТЕЛЬНО!
+      console.log('Proxy sending to client:', data); // <--- добавьте это
+      res.status(response.status).send(data);
     }
   } catch (e) {
     console.error('Proxy server error:', e);
