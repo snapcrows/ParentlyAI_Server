@@ -14,6 +14,9 @@ app.all('/openai/*', async (req, res) => {
   try {
     const openaiPath = req.path.replace(/^\/openai/, '');
     const url = `https://api.openai.com${openaiPath}`;
+    console.log('---\nIncoming request:', req.method, url);
+    console.log('Headers:', req.headers);
+    console.log('Body:', req.body);
 
     // Собираем только нужные заголовки
     const headers = {
@@ -35,7 +38,10 @@ app.all('/openai/*', async (req, res) => {
       body: ['GET', 'HEAD'].includes(req.method) ? undefined : JSON.stringify(req.body),
     };
 
+    console.log('Proxying to OpenAI:', options);
     const response = await fetch(url, options);
+    console.log('OpenAI response status:', response.status);
+    console.log('OpenAI response headers:', Object.fromEntries(response.headers.entries()));
 
     // Если ошибка — выведем тело ответа в лог
     if (!response.ok) {
@@ -59,10 +65,11 @@ app.all('/openai/*', async (req, res) => {
 
     // Для SSE (stream: true) — проксируем поток
     if (response.headers.get('content-type')?.includes('text/event-stream')) {
+      console.log('Proxying SSE stream to client');
       response.body.pipe(res);
     } else {
       const data = await response.text();
-      console.log('Proxy sending to client:', data); // <--- добавьте это
+      console.log('Proxy sending to client:', data);
       res.status(response.status).send(data);
     }
   } catch (e) {
@@ -74,6 +81,8 @@ app.all('/openai/*', async (req, res) => {
 // Для совместимости с ai.js/audio.js (обычный chat/completions)
 app.post('/openai', async (req, res) => {
   try {
+    console.log('---\nIncoming /openai POST');
+    console.log('Body:', req.body);
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -83,6 +92,7 @@ app.post('/openai', async (req, res) => {
       body: JSON.stringify(req.body),
     });
 
+    console.log('OpenAI response status:', response.status);
     if (!response.ok) {
       const errText = await response.text();
       console.error('OpenAI error:', response.status, errText);
@@ -90,8 +100,9 @@ app.post('/openai', async (req, res) => {
       return;
     }
 
-    const data = await response.json();
-    res.json(data);
+    const data = await response.text();
+    console.log('Proxy sending to client:', data);
+    res.status(response.status).send(data);
   } catch (e) {
     console.error('Proxy server error:', e);
     res.status(500).json({ error: e.message });
